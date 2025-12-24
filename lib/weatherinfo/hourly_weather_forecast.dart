@@ -34,7 +34,7 @@ class HourlyWeatherForecast extends StatelessWidget {
                 Icon(icon, size: 32),
                 SizedBox(height: 8),
 
-                Text(temp, style: TextStyle(fontSize: 16)),
+                Text('$temp °C', style: TextStyle(fontSize: 16)),
               ],
             ),
           ),

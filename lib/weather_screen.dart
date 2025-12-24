@@ -3,13 +3,14 @@ import 'dart:ui';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
-import 'package:weather_app/additional_info_item.dart';
-import 'package:weather_app/api_keys.dart';
-import 'package:weather_app/hourly_weather_forecast.dart';
+import 'package:weather_app/weatherinfo/additional_info_item.dart';
+import 'package:weather_app/weatherinfo/api_keys.dart';
+import 'package:weather_app/weatherinfo/hourly_weather_forecast.dart';
 import 'package:http/http.dart' as http;
 
 class WeatherScreen extends StatefulWidget {
-  const WeatherScreen({super.key});
+  final String cityName;
+  const WeatherScreen({super.key, required this.cityName});
 
   @override
   State<WeatherScreen> createState() => _WeatherScreenState();
@@ -19,12 +20,11 @@ class _WeatherScreenState extends State<WeatherScreen> {
   late Future<Map<String, dynamic>> weather;
 
   Future<Map<String, dynamic>> getCurrentWeather() async {
+    final cityName = widget.cityName;
     try {
-      String placeName = "Kathmandu";
-
       final res = await http.get(
         Uri.parse(
-          'https://api.openweathermap.org/data/2.5/forecast?q=$placeName&APPID=$openWeatherApiKey',
+          'https://api.openweathermap.org/data/2.5/forecast?q=$cityName&units=metric&APPID=$openWeatherApiKey',
         ),
       );
       final data = jsonDecode(res.body);
@@ -48,7 +48,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          "Weather App",
+          '${widget.cityName} Weather',
           style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -103,7 +103,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                           child: Column(
                             children: [
                               Text(
-                                '$currentWeather K',
+                                '$currentWeather °C',
                                 style: const TextStyle(
                                   fontSize: 32,
                                   fontWeight: FontWeight.bold,
@@ -144,7 +144,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
                     itemCount: 5,
                     itemBuilder: (context, index) {
                       final hourlyForecast = data['list'][index + 1];
-                      final hourlyIcon = hourlyForecast['weather'][0]['Clouds'];
+                      final hourlyIcon = hourlyForecast['weather'][0]['main'];
                       final hourlyTemp = hourlyForecast['main']['temp'];
                       final time = DateTime.parse(hourlyForecast['dt_txt']);
 
