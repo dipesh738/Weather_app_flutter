@@ -7,6 +7,7 @@ import 'package:weather_app/weatherinfo/additional_info_item.dart';
 import 'package:weather_app/weatherinfo/api_keys.dart';
 import 'package:weather_app/weatherinfo/hourly_weather_forecast.dart';
 import 'package:http/http.dart' as http;
+import 'package:weather_app/weatherinfo/scroll_arrow.dart';
 
 class WeatherScreen extends StatefulWidget {
   final String cityName;
@@ -17,6 +18,10 @@ class WeatherScreen extends StatefulWidget {
 }
 
 class _WeatherScreenState extends State<WeatherScreen> {
+  final ScrollController _scrollController = ScrollController();
+  bool _showLeftArrow = false;
+  bool _showRightArrow = true;
+
   late Future<Map<String, dynamic>> weather;
 
   Future<Map<String, dynamic>> getCurrentWeather() async {
@@ -41,6 +46,21 @@ class _WeatherScreenState extends State<WeatherScreen> {
   void initState() {
     super.initState();
     weather = getCurrentWeather();
+    _scrollController.addListener(() {
+      final position = _scrollController.position;
+      final Threshold = 5.0;
+      setState(() {
+        _showLeftArrow = position.pixels > Threshold;
+        _showRightArrow =
+            position.pixels < position.maxScrollExtent - Threshold;
+      });
+    });
+
+    @override
+    void dispose() {
+      _scrollController.dispose();
+      super.dispose();
+    }
   }
 
   @override
@@ -139,23 +159,61 @@ class _WeatherScreenState extends State<WeatherScreen> {
                 // HOURLY WEARHER FORCAST
                 SizedBox(
                   height: 120,
-                  child: ListView.builder(
-                    scrollDirection: Axis.horizontal,
-                    itemCount: 5,
-                    itemBuilder: (context, index) {
-                      final hourlyForecast = data['list'][index + 1];
-                      final hourlyIcon = hourlyForecast['weather'][0]['main'];
-                      final hourlyTemp = hourlyForecast['main']['temp'];
-                      final time = DateTime.parse(hourlyForecast['dt_txt']);
+                  child: Stack(
+                    children: [
+                      ListView.builder(
+                        controller: _scrollController,
+                        scrollDirection: Axis.horizontal,
+                        itemCount: 5,
 
-                      return HourlyWeatherForecast(
-                        icon: hourlyIcon == 'Clouds' || hourlyIcon == 'Rain'
-                            ? Icons.cloud
-                            : Icons.sunny,
-                        temp: hourlyTemp.toString(),
-                        time: DateFormat.Hm().format(time),
-                      );
-                    },
+                        itemBuilder: (context, index) {
+                          final hourlyForecast = data['list'][index + 1];
+                          final hourlyIcon =
+                              hourlyForecast['weather'][0]['main'];
+                          final hourlyTemp = hourlyForecast['main']['temp'];
+                          final time = DateTime.parse(hourlyForecast['dt_txt']);
+
+                          return HourlyWeatherForecast(
+                            icon: hourlyIcon == 'Clouds' || hourlyIcon == 'Rain'
+                                ? Icons.cloud
+                                : Icons.sunny,
+                            temp: hourlyTemp.toString(),
+                            time: DateFormat.Hm().format(time),
+                          );
+                        },
+                      ),
+                      if (_showLeftArrow)
+                        Positioned(
+                          top: 40,
+                          left: 0,
+                          child: ScrollArrow(
+                            icon: Icons.arrow_back_ios_new,
+                            onTap: () {
+                              _scrollController.animateTo(
+                                _scrollController.offset - 120,
+                                duration: const Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                          ),
+                        ),
+
+                      if (_showRightArrow)
+                        Positioned(
+                          top: 40,
+                          right: 0,
+                          child: ScrollArrow(
+                            icon: Icons.arrow_forward_ios,
+                            onTap: () {
+                              _scrollController.animateTo(
+                                _scrollController.offset + 120,
+                                duration: Duration(milliseconds: 300),
+                                curve: Curves.easeOut,
+                              );
+                            },
+                          ),
+                        ),
+                    ],
                   ),
                 ),
 

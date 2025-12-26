@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:weather_app/Weather_nepal.dart';
+import 'package:weather_app/weather_nepal.dart';
 
 void main() {
   runApp(const MyApp());
