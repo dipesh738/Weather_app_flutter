@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:weather_app/weather_nepal.dart';
+import 'package:weather_app/weather_main.dart';
 
 void main() {
   runApp(const MyApp());
@@ -13,7 +13,8 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       debugShowCheckedModeBanner: false,
       theme: ThemeData.dark(useMaterial3: true),
-      home: WeatherNepal(),
+      debugShowMaterialGrid: false,
+      home: WeatherMain(),
     );
   }
 }

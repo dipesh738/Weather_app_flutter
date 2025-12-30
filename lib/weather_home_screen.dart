@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:ui';
+import 'package:geolocator/geolocator.dart';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
@@ -9,30 +10,53 @@ import 'package:weather_app/weatherinfo/hourly_weather_forecast.dart';
 import 'package:http/http.dart' as http;
 import 'package:weather_app/weatherinfo/scroll_arrow.dart';
 
-class WeatherScreen extends StatefulWidget {
-  final String cityName;
-  const WeatherScreen({super.key, required this.cityName});
+class WeatherHomeScreen extends StatefulWidget {
+  const WeatherHomeScreen({super.key});
 
   @override
-  State<WeatherScreen> createState() => _WeatherScreenState();
+  State<WeatherHomeScreen> createState() => _WeatherHomeScreenState();
 }
 
-class _WeatherScreenState extends State<WeatherScreen> {
+class _WeatherHomeScreenState extends State<WeatherHomeScreen> {
   final ScrollController _scrollController = ScrollController();
   bool _showLeftArrow = false;
-  bool _showRightArrow = false;
+  bool _showRightArrow = true;
 
   late Future<Map<String, dynamic>> weather;
 
+  Future<Position> _getCurrentLocation() async {
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      throw Exception("Location Services are disabled");
+    }
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      throw Exception("Location Permission permanently denied");
+    }
+    return await Geolocator.getCurrentPosition(
+      desiredAccuracy: LocationAccuracy.high,
+    );
+  }
+
   Future<Map<String, dynamic>> getCurrentWeather() async {
-    final cityName = widget.cityName;
     try {
+      final position = await _getCurrentLocation();
       final res = await http.get(
         Uri.parse(
-          'https://api.openweathermap.org/data/2.5/forecast?q=$cityName&units=metric&APPID=$openWeatherApiKey',
+          'https://api.openweathermap.org/data/2.5/forecast'
+          '?lat=${position.latitude}'
+          '&lon=${position.longitude}'
+          '&units=metric'
+          '&appid=$openWeatherApiKey',
         ),
       );
       final data = jsonDecode(res.body);
+      setState(() {});
+
       if (data['cod'] != '200') {
         throw 'message ';
       }
@@ -46,6 +70,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
   void initState() {
     super.initState();
     weather = getCurrentWeather();
+
     _scrollController.addListener(() {
       final position = _scrollController.position;
       final threshold = 5.0;
@@ -68,7 +93,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Text(
-          '${widget.cityName} Weather',
+          'Weather Today',
           style: TextStyle(fontSize: 30, fontWeight: FontWeight.bold),
         ),
         centerTitle: true,
@@ -80,7 +105,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
             return Center(child: CircularProgressIndicator.adaptive());
           }
           if (snapshot.hasError) {
-            Center(child: Text(snapshot.hasError.toString()));
+            return Center(child: Text(snapshot.error.toString()));
           }
           final data = snapshot.data!;
           final currentWeatherdata = data['list'][0];
@@ -105,7 +130,7 @@ class _WeatherScreenState extends State<WeatherScreen> {
               await weather;
             },
             child: SingleChildScrollView(
-              physics: AlwaysScrollableScrollPhysics(),
+              physics: const AlwaysScrollableScrollPhysics(),
               padding: EdgeInsets.all(16.0),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,

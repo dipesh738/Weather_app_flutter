@@ -44,54 +44,64 @@ class _WeatherNepalState extends State<WeatherNepal> {
         ),
         centerTitle: true,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            FutureBuilder<List<String>>(
-              future: citiesFuture,
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return CircularProgressIndicator();
-                }
-                if (snapshot.hasError) {
-                  return Text('Error :${snapshot.error}');
-                }
-                final cities = snapshot.data!;
-                return DropdownButtonFormField<String>(
-                  decoration: const InputDecoration(
-                    label: Text("Select City"),
-                    border: OutlineInputBorder(),
-                  ),
-                  initialValue: selectedCity,
-                  items: cities.map((city) {
-                    return DropdownMenuItem(value: city, child: Text(city));
-                  }).toList(),
-                  onChanged: (value) {
-                    setState(() {
-                      selectedCity = value;
-                    });
-                  },
-                );
-              },
-            ),
-            SizedBox(height: 20),
-            ElevatedButton(
-              onPressed: selectedCity == null
-                  ? null
-                  : () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (_) =>
-                              WeatherScreen(cityName: selectedCity!),
-                        ),
-                      );
+      body: RefreshIndicator(
+        onRefresh: () async {
+          citiesFuture = fetchNepalCities();
+          setState(() {});
+          await citiesFuture;
+        },
+        child: SingleChildScrollView(
+          physics: AlwaysScrollableScrollPhysics(),
+          padding: EdgeInsets.all(16.0),
+
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              FutureBuilder<List<String>>(
+                future: citiesFuture,
+                builder: (context, snapshot) {
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return Center(child: CircularProgressIndicator.adaptive());
+                  }
+                  if (snapshot.hasError) {
+                    return Text('Error :${snapshot.error}');
+                  }
+                  final cities = snapshot.data!;
+                  return DropdownButtonFormField<String>(
+                    decoration: const InputDecoration(
+                      label: Text("Select City"),
+                      border: OutlineInputBorder(),
+                    ),
+                    initialValue: selectedCity,
+                    items: cities.map((city) {
+                      return DropdownMenuItem(value: city, child: Text(city));
+                    }).toList(),
+                    onChanged: (value) {
+                      setState(() {
+                        selectedCity = value;
+                      });
                     },
-              child: Text("View Weather"),
-            ),
-          ],
+                  );
+                },
+              ),
+              SizedBox(height: 20),
+              ElevatedButton(
+                onPressed: selectedCity == null
+                    ? null
+                    : () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                WeatherScreen(cityName: selectedCity!),
+                          ),
+                        );
+                      },
+                child: Text("View Weather"),
+              ),
+            ],
+          ),
         ),
       ),
     );
